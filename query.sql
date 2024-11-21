@@ -1,1 +1,4 @@
-SELECT id FROM user WHERE age = 30 ;
+INSERT INTO employees (id, name, position, salary)
+VALUES 
+(2, 'Bob', 'Manager', 85000),
+(3, 'Charlie', 'Analyst', 60000);

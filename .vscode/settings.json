@@ -1,0 +1,9 @@
+{
+  "makefile.launchConfigurations": [
+    {
+      "cwd": "/home/lion/Documents/lionql",
+      "binaryPath": "/home/lion/Documents/lionql/sql",
+      "binaryArgs": []
+    }
+  ]
+}

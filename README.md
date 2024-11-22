@@ -62,3 +62,45 @@
 2. union中的结构可以在c中定义使用，只对需要解析的部分生效，比如有一些无类型token将直接忽略，但是仍然要占据$n的编号，比如exp operator exp中exp是表达式可以有值，而operator假设只是一个符号，无类型token，那么就是%type<char*> exp和 %token operator,类型是struct exps{char* a; char* b;}，
 3. <<EOF>>是夺取系统对eof结束的处理，如果你没有任何处理的需求，就不要这么做。
 4. 空语句可以做什么？ stmt_list: stmt END stmt_list中stmt_list支持空语句就能去掉stmt END这个情况。但是对于有类型的不能定义空语句
+
+### [2024-11-22]
+
+SELECT X FROM X WHERE X COMPARE X ;
+INSERT INTO X (X, ...) VALUES (X, ...), ... ;
+UPDATE X SET X = X, ... ;
+CREATE DATABASE X ;
+CREATE TABLE X ( X INT PRIMARY KEY, ...) ;
+CREATE VIEW X;
+CREATE INDEX X ON X(X) ;
+ALTER TABLE X ADD X DECIMAL(10, 2) ;
+ALTER TABLE X MODIFY X SMALLINT ;
+ALTER TABLE X RENAME CLOUMN X TO X ;
+ALTER TABLE X DROP COLUMN X ;
+ALTER TABLE X RENAME TO X
+DROP DATABASE X ;
+DROP TABLE X ;
+DROP VIEW X ;
+DROP INDEX X ;
+INNER JOIN X ON X.X = X.X, ...
+LEFT JOIN X ON X.X = X.X, ...
+ORDER BY X ASC LIMIT X OFFSET X
+AS X
+LEFT(X, X)
+AVG(X)
+USING (X, ...)
+
+-> STMT
+INSERT INTO X VALUES (X)
+UPDATE X SET X = X
+
+-> TABLE (同时也可以单独成为语句)
+SELECT X FROM TABLE
+-> TABLE (不能单独成句)
+X INNER JOIN X ON CONDITION
+X LEFT JOIN X ON CONDITION
+
+-> RESTRICT
+WHERE CONDITION
+ORDER BY X ASC
+LIMIT X
+OFFSET X

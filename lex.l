@@ -1,7 +1,6 @@
 %{
   #include "parser.tab.h"
 %}
-%x SET_MODE
 %%
 ("SELECT"|"select") {return SELECT;}
 ("DELETE"|"delete") {return DELETE;}
@@ -11,9 +10,32 @@
 ("WHERE"|"where") {return WHERE;}
 ("INTO"|"into") {return INTO;}
 ("VALUES"|"values") {return VALUES;}
-("SET"|"set") {BEGIN(SET_MODE); return SET;}
+("SET"|"set") {return SET;}
+("CREATE"|"create") {return CREATE;}
+("DATABASE"|"database") {return DATABASE;}
+("TABLE"|"table") {return TABLE;}
+("VIEW"|"view") {return VIEW;}
+("INDEX"|"index") {return INDEX;}
+("PRIMARY"|"primary") {return PRIMARY;}
+("AS"|"as") {return AS;}
+("ON"|"on") {return ON;}
+("ALTER"|"alter") {return ALTER;}
+("ADD"|"add") {return ADD;}
+("MODIFY"|"modify") {return MODIFY;}
+("RENAME"|"rename") {return RENAME;}
+("COLUMN"|"column") {return COLUMN;}
+("TO"|"to") {return TO;}
+("DROP"|"drop") {return DROP;}
+("INNER"|"inner") {return INNER;}
+("LEFT"|"left") {return LEFT;}
+("JOIN"|"join") {return JOIN;}
+("ORDER"|"order") {return ORDER;}
+("ASC"|"asc") {return ASC;}
+("DESC"|"desc") {return DESC;}
+("OFFSET"|"offset") {return OFFSET;}
 "IS" {return IS;}
 "NULL" {return NULL_VAL;}
+"*" {return MATCH_ANY;}
 "NOT" {return NOT;}
 [a-zA-Z_][a-zA-Z0-9_]* {yylval.str = strdup(yytext);return IDENTIFIER;}
 "[a-zA-Z_][a-zA-Z0-9_]*" {yylval.str = strdup(yytext);return IDENTIFIER;}

@@ -14,145 +14,324 @@ void yyerror(const char* s){
 %union {
   char* str;
 }
-%token <str> IDENTIFIER
-%token <str> STRING
-%token <str> INTEGER
-%token <str> DECIMAL
-%token <str> BINARY
-%token SELECT FROM WHERE
-%token INSERT INTO VALUES
-%token UPDATE SET
-%token DELETE
-%token CREATE DATABASE TABLE VIEW INDEX PRIMARY AS ON
-%token ALTER ADD MODIFY RENAME COLUMN TO BETWEEN AND USING
-%token DROP
-%token INNER LEFT JOIN
-%token ORDER BY LIMIT
-%token ASC DESC OFFSET
-%token IS NULL_VAL NOT END IN WITH MATCH_ANY
+%token <str> INTEGER DECIMAL BINARY STRING IDENTIFIER // variable term
+%token SELECT INSERT UPDATE DELETE CREATE ALTER DROP // SQL operator
+%token FROM WHERE INTO AS TO BETWEEN ADD USING ON VALUES // auxilary token
+%token RENAME MODIFY SET // declare operate word
+%token <str> NULL_VAL NOT_NULL_VAL PRIMARY_KEY DEFAULT
+%token <str> DECIMAL_PRECISION DECIMAL_SCALE FIX_LEN VAR_LEN AUTO_INCREMENT
+%token <str> INT TINYINT SMALLINT BIGINT DECIMAL_TYPE NUMERIC FLOAT DOUBLE
+%token <str> CHAR VARCHAR TEXT 
+%token <str> DATE TIME DATETIME YEAR TIMESTAMP CURRENT_TIMESTAMP
+%token <str> BOOL BLOB BINARY_TYPE VARBINARY 
+%token <str> ENUM SET_FUNC UUID JSON XML // basic data type
+%token INNER LEFT JOIN ORDER BY LIMIT ASC DESC OFFSET WITH IN
+%token DATABASE TABLE VIEW INDEX COLUMN // struct type
+%token IS AND OR NOT END MATCH_ANY 
+%token LEFT_FUNC AVG_FUNC
 %token <str> GT LT EQ GE LE COMMA LPAREN RPAREN
-%type <str> stmt select_stmt
-%type <str> rvalue lvalue
-%type <str> condition restrict restrict_list
-%type <str> compare
-%type <str> update
-%type <str> values_list values_vector column_list update_list
+
+%type <str> stmt select_stmt insert_stmt update_stmt delete_stmt create_stmt alter_stmt drop_stmt
+%type <str> stmt_list column_list value_list value_list_list assign_list member_list
+%type <str> condition lvalue rvalue assign compare restrict primary member
+%type <str> where_cond order_cond where_order_cond
+%type <str> select_base update_base delete_base
+%type <str> type type_addition
 %%
 stmt_list:
   stmt_list stmt END {printf("%s ;\n", $2); free($2);}
-  |;
+  | stmt END {printf("%s ;\n", $1); free($1);}
+;
 stmt:
-  select_stmt
-  | INSERT INTO lvalue LPAREN column_list RPAREN VALUES values_list {
+  select_stmt | insert_stmt | update_stmt | delete_stmt | create_stmt | alter_stmt | drop_stmt ;
+select_stmt:
+  select_base condition {
+    char* ptr = malloc(sizeof(char)*512);
+    sprintf(ptr, "%s %s", $1, $2);
+    free($1);free($2);
+    $$ = ptr;
+  }
+  | select_base where_order_cond {
+    char* ptr = malloc(sizeof(char)*512);
+    sprintf(ptr, "%s %s", $1, $2);
+    free($1);free($2);
+    $$ = ptr;
+  }
+  | select_base
+;
+select_base:
+  SELECT IDENTIFIER FROM LPAREN select_base RPAREN {
+    char* ptr = malloc(sizeof(char)*512);
+    sprintf(ptr, "SELECT %s FROM ( %s ) %s", $2, $5);
+    free($2);free($5);
+    $$ = ptr;
+  }
+  | SELECT IDENTIFIER FROM lvalue {
+    char* ptr = malloc(sizeof(char)*512);
+    sprintf(ptr, "SELECT %s FROM %s %s", $2, $4);
+    free($2);free($4);
+    $$ = ptr;
+  }
+;
+insert_stmt:
+  INSERT INTO lvalue LPAREN column_list RPAREN VALUES value_list {
     char* ptr = malloc(sizeof(char)*512);
     sprintf(ptr, "INSERT INTO %s ( %s ) VALUES\n%s", $3, $5, $8);
     free($3);free($5);free($8);
     $$ = ptr;
   }
-  | UPDATE lvalue SET update_list condition {
+;
+update_stmt:
+  update_base condition {
     char* ptr = malloc(sizeof(char)*512);
-    sprintf(ptr, "UPDATE %s SET %s %s", $2, $4, $5);
-    free($2);free($4);free($5);
+    sprintf(ptr, "%s %s", $1, $2);
+    free($1);free($2);
     $$ = ptr;
   }
-  | DELETE FROM lvalue condition {
+  | update_base where_order_cond {
     char* ptr = malloc(sizeof(char)*512);
-    sprintf(ptr, "DELETE FROM %s %s", $3, $4);
-    free($3);free($4);
+    sprintf(ptr, "%s %s", $1, $2);
+    free($1);free($2);
     $$ = ptr;
   }
-  | DELETE FROM lvalue {
+  | update_base
+;
+update_base:
+  UPDATE lvalue SET assign_list {
+    char* ptr = malloc(sizeof(char)*512);
+    sprintf(ptr, "UPDATE %s SET %s", $2, $4);
+    free($2);free($4);
+    $$ = ptr;
+  }
+;
+delete_stmt:
+  delete_base condition {
+    char* ptr = malloc(sizeof(char)*512);
+    sprintf(ptr, "%s %s", $1, $2);
+    free($1);free($2);
+    $$ = ptr;
+  }
+  | delete_base where_order_cond {
+    char* ptr = malloc(sizeof(char)*512);
+    sprintf(ptr, "%s %s", $1, $2);
+    free($1);free($2);
+    $$ = ptr;
+  }
+  | delete_base
+  ;
+delete_base:
+  DELETE FROM lvalue {
     char* ptr = malloc(sizeof(char)*512);
     sprintf(ptr, "DELETE FROM %s", $3);
     free($3);
     $$ = ptr;
   }
-  | CREATE DATABASE IDENTIFIER {
-
-  }
-  | CREATE INDEX IDENTIFIER ON lvalue LPAREN IDENTIFIER RPAREN
-  | ALTER TABLE lvalue RENAME COLUMN IDENTIFIER TO IDENTIFIER
-  | ALTER TABLE lvalue DROP COLUMN IDENTIFIER
-  | ALTER TABLE lvalue RENAME TO IDENTIFIER
-  | DROP DATABASE IDENTIFIER
-  | DROP TABLE IDENTIFIER
-  | DROP VIEW IDENTIFIER
-  | DROP INDEX IDENTIFIER
-  ;
-select_stmt:
-  SELECT IDENTIFIER FROM LPAREN lvalue RPAREN condition {
+;
+create_stmt:
+  CREATE DATABASE IDENTIFIER {
     char* ptr = malloc(sizeof(char)*512);
-    sprintf(ptr, "SELECT %s FROM ( %s ) %s", $2, $5, $7);
-    free($2);free($5);free($7);
+    sprintf(ptr, "CREATE DATABASE %s", $3);
+    free($3);
     $$ = ptr;
   }
-  | SELECT IDENTIFIER FROM lvalue condition {
+  | CREATE TABLE IDENTIFIER LPAREN member_list RPAREN {
     char* ptr = malloc(sizeof(char)*512);
-    sprintf(ptr, "SELECT %s FROM %s %s", $2, $4, $5);
-    free($2);free($4);free($5);
+    sprintf(ptr, "CREATE DATABASE %s ( %s )", $3, $5);
+    free($3);free($5);
     $$ = ptr;
   }
-  ;
-restrict_list:
-  restrict_list restrict
-  |;
-restrict:
-  WHERE condition {
+  | CREATE TABLE IDENTIFIER LPAREN member_list COMMA primary RPAREN {
     char* ptr = malloc(sizeof(char)*512);
-    sprintf(ptr, "WHERE %s", $2);
+    sprintf(ptr, "CREATE DATABASE %s ( %s )", $3, $5);
+    free($3);free($5);
+    $$ = ptr;
+  }
+  | CREATE INDEX IDENTIFIER ON lvalue LPAREN IDENTIFIER RPAREN {
+    char* ptr = malloc(sizeof(char)*512);
+    sprintf(ptr, "CREATE INDEX %s ON %s ( %s )", $3, $5, $7);
+    free($3);free($5);free($7);
+    $$ = ptr;
+  }
+;
+alter_stmt:
+  ALTER TABLE lvalue RENAME COLUMN IDENTIFIER TO IDENTIFIER {
+    char* ptr = malloc(sizeof(char)*512);
+    sprintf(ptr, "CREATE TABLE %s RENAME COLUMN %s TO %s", $3, $6, $8);
+    free($3);free($6);free($8);
+    $$ = ptr;
+  }
+  | ALTER TABLE lvalue DROP COLUMN IDENTIFIER {
+    char* ptr = malloc(sizeof(char)*512);
+    sprintf(ptr, "CREATE TABLE %s DROP COLUMN %s", $3, $6);
+    free($3);free($6);
+    $$ = ptr;
+  }
+  | ALTER TABLE lvalue RENAME TO IDENTIFIER {
+    char* ptr = malloc(sizeof(char)*512);
+    sprintf(ptr, "CREATE TABLE %s RENAME TO %s", $3, $6);
+    free($3);free($6);
+    $$ = ptr;
+  }
+;
+drop_stmt:
+  DROP DATABASE IDENTIFIER {
+    char* ptr = malloc(sizeof(char)*512);
+    sprintf(ptr, "DROP DATABASE %s", $3);
+    free($3);
+    $$ = ptr;
+  }
+  | DROP TABLE IDENTIFIER {
+    char* ptr = malloc(sizeof(char)*512);
+    sprintf(ptr, "DROP TABLE %s", $3);
+    free($3);
+    $$ = ptr;
+  }
+  | DROP VIEW IDENTIFIER {
+    char* ptr = malloc(sizeof(char)*512);
+    sprintf(ptr, "DROP VIEW %s", $3);
+    free($3);
+    $$ = ptr;
+  }
+  | DROP INDEX IDENTIFIER {
+    char* ptr = malloc(sizeof(char)*512);
+    sprintf(ptr, "DROP INDEX %s", $3);
+    free($3);
+    $$ = ptr;
+  }
+;
+condition:
+  where_cond | order_cond
+;
+where_order_cond:
+  where_cond order_cond {
+    char* ptr = malloc(sizeof(char)*512);
+    sprintf(ptr, "%s %s", $1, $2);
+    free($1);free($2);
+    $$ = ptr;
+  }
+;
+where_cond:
+  WHERE lvalue compare rvalue restrict {
+    char* ptr = malloc(sizeof(char)*512);
+    sprintf(ptr, "WHERE %s %s %s", $2, $3, $4);
+    free($2);free($3);free($4);
+    $$ = ptr;
+  }
+  | WHERE lvalue IS NULL_VAL restrict {
+    char* ptr = malloc(sizeof(char)*512);
+    sprintf(ptr, "WHERE %s IS NULL", $2);
     free($2);
     $$ = ptr;
   }
-  | ORDER BY lvalue DESC{
-
+  | WHERE lvalue IS NOT NULL_VAL restrict {
+    char* ptr = malloc(sizeof(char)*512);
+    sprintf(ptr, "WHERE %s IS NOT NULL", $2);
+    free($2);
+    $$ = ptr;
   }
-  | ORDER BY lvalue ASC{
-
+;
+order_cond:
+  ORDER BY lvalue DESC restrict {
+    char* ptr = malloc(sizeof(char)*512);
+    sprintf(ptr, "ORDER BY %s DESC %s", $3, $5);
+    free($3);free($5);
+    $$ = ptr;
   }
-  | LIMIT rvalue {
-
+  | ORDER BY lvalue ASC restrict {
+    char* ptr = malloc(sizeof(char)*512);
+    sprintf(ptr, "ORDER BY %s ASC %s", $3, $5);
+    free($3);free($5);
+    $$ = ptr;
+  }
+;
+restrict:
+  LIMIT rvalue {
+    char* ptr = malloc(sizeof(char)*512);
+    sprintf(ptr, "LIMIT %s", $2);
+    free($2);
+    $$ = ptr;
+  }
+  | LIMIT rvalue OFFSET rvalue {
+    char* ptr = malloc(sizeof(char)*512);
+    sprintf(ptr, "LIMIT %s OFFSET %s", $2, $4);
+    free($2);free($4);
+    $$ = ptr;
   }
   | OFFSET rvalue {
-
+    char* ptr = malloc(sizeof(char)*512);
+    sprintf(ptr, "OFFSET %s", $2);
+    free($2);
+    $$ = ptr;
   }
-  ;
-condition:
-  lvalue compare rvalue {
+  |{}
+;
+primary:
+  PRIMARY_KEY LPAREN IDENTIFIER RPAREN {
+    char* ptr = malloc(sizeof(char)*512);
+    sprintf(ptr, "%s %s", $1, $3);
+    free($1);free($3);
+    $$ = ptr;
+  }
+;
+member_list:
+  member_list COMMA member {
+    char* ptr = malloc(sizeof(char)*512);
+    sprintf(ptr, ", %s", $3);
+    free($3);
+    $$ = ptr;
+  }
+  | member
+;
+member:
+  IDENTIFIER type {
+    char* ptr = malloc(sizeof(char)*512);
+    sprintf(ptr, "%s %s", $1, $2);
+    free($1);free($2);
+    $$ = ptr;
+  }
+  | IDENTIFIER type type_addition {
     char* ptr = malloc(sizeof(char)*512);
     sprintf(ptr, "%s %s %s", $1, $2, $3);
     free($1);free($2);free($3);
     $$ = ptr;
   }
-  | lvalue IS NULL_VAL {
+;
+type:
+  INT | TINYINT | SMALLINT | DECIMAL_TYPE | NUMERIC | FLOAT | DOUBLE |
+  CHAR | VARCHAR | TEXT |
+  DATE | TIME | DATETIME | YEAR | TIMESTAMP |
+  BLOB | BINARY_TYPE | VARBINARY |
+  ENUM | SET_FUNC | JSON | XML
+;
+type_addition:
+  PRIMARY_KEY
+  | NULL_VAL
+  | NOT_NULL_VAL
+  | DEFAULT rvalue {
     char* ptr = malloc(sizeof(char)*512);
-    sprintf(ptr, "%s IS NULL", $1);
-    free($1);
+    sprintf(ptr, "%s", $2);
+    free($2);
     $$ = ptr;
   }
-  | lvalue IS NOT NULL_VAL {
-    char* ptr = malloc(sizeof(char)*512);
-    sprintf(ptr, "%s IS NOT NULL", $1);
-    free($1);
-    $$ = ptr;
-  }
-  ;
-update_list:
-  update_list COMMA update {
+  | AUTO_INCREMENT
+;
+assign_list:
+  assign_list COMMA assign {
     char* ptr = malloc(sizeof(char)*512);
     sprintf(ptr, "%s, %s", $1, $3);
     free($1);free($3);
     $$ = ptr;
   }
-  | update
-  ;
-update:
+  | assign
+;
+assign:
   IDENTIFIER EQ rvalue {
     char* ptr = malloc(sizeof(char)*512);
     sprintf(ptr, " %s = %s", $1, $3);
     free($1);free($3);
     $$ = ptr;
   }
-  ;
+;
 column_list:
   column_list COMMA IDENTIFIER {
     char* ptr = malloc(sizeof(char)*512);
@@ -161,48 +340,54 @@ column_list:
     $$ = ptr;
   }
   | IDENTIFIER
-  ;
-values_list:
-  values_list COMMA LPAREN values_vector RPAREN {
+;
+value_list:
+  value_list COMMA LPAREN value_list_list RPAREN {
     char* ptr = malloc(sizeof(char)*512);
     sprintf(ptr, "%s,\n( %s )", $1, $4);
     free($1);free($4);
     $$ = ptr;
   }
-  | LPAREN values_vector RPAREN {
+  | LPAREN value_list_list RPAREN {
     char* ptr = malloc(sizeof(char)*512);
     sprintf(ptr, "( %s )", $2);
     free($2);
     $$ = ptr;
   }
-  ;
-values_vector:
-  values_vector COMMA rvalue {
+;
+value_list_list:
+  value_list_list COMMA rvalue {
     char* ptr = malloc(sizeof(char)*512);
     sprintf(ptr, "%s, %s", $1, $3);
     free($1);free($3);
     $$ = ptr;
   }
   | rvalue
-  ;
+;
 compare:
   GT | LT | EQ | GE | LE ;
 lvalue:
   IDENTIFIER
-  | select_stmt
   | lvalue INNER JOIN lvalue ON condition {
-
+    char* ptr = malloc(sizeof(char)*512);
+    sprintf(ptr, "%s INNER JOIN %s ON %s", $1, $4, $6);
+    free($1);free($4);free($6);
+    $$ = ptr;
   }
   | lvalue LEFT JOIN lvalue ON condition {
-
+    char* ptr = malloc(sizeof(char)*512);
+    sprintf(ptr, "%s LEFT JOIN %s ON %s", $1, $4, $6);
+    free($1);free($4);free($6);
+    $$ = ptr;
   }
-  ;
+;
 rvalue:
   INTEGER
   | DECIMAL
   | STRING
   | BINARY
-  ;
+  | CURRENT_TIMESTAMP
+;
 %%
 int main(int argc, char* argv[]){
   if(argc == 2){

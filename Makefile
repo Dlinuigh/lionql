@@ -1,28 +1,25 @@
-# 定义目标和依赖文件
 DEPEND = parser.tab.c lex.yy.c
-TARGET = sql
+TARGET = lionql
+PARSER_TARGET = sql
 CC = gcc
 FLEX = flex
 BISON = bison
-# 默认目标
-all: ${TARGET}
+MESON = meson
+BUILD_DIR = _build
+MESON_SETUP_CMD = $(MESON) setup $(BUILD_DIR)
+MESON_COMPILE_CMD = $(MESON) compile -C $(BUILD_DIR)
 
-# 生成目标文件
-${TARGET}: ${DEPEND}
-	${CC} -o $@ $^ -lfl
-
-# debug目标
-debug: ${DEPEND}
-	${CC} -DYYDEBUG=1 -o ${TARGET} $^ -lfl
-
-# 使用 Flex 编译 .l 文件
+all: $(TARGET) $(PARSER_TARGET) $(BUILD_DIR)
+	@$(MESON_COMPILE_CMD)
+$(BUILD_DIR):
+	@$(MESON_SETUP_CMD)
+$(PARSER_TARGET): $(DEPEND)
+	@$(CC) -o $@ $^ -lfl
+debug: $(DEPEND)
+	@$(CC) -DYYDEBUG=1 -o $(PARSER_TARGET) $^ -lfl
 %.yy.c: %.l
-	${FLEX} -o $@ $<
-
-# 使用 Bison 编译 .y 文件
+	@$(FLEX) -o $@ $<
 %.tab.c: %.y
-	${BISON} -Wcounterexamples -o $@ -d $<
-
-# 清理中间文件
+	@$(BISON) -Wcounterexamples -o $@ -d $<
 clean:
-	rm -f ${TARGET} *.yy.c *.tab.c *.tab.h
+	@rm -f $(PARSER_TARGET) *.yy.c *.tab.c *.tab.h -r $(BUILD_DIR) $(TARGET)

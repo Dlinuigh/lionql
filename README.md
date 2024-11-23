@@ -1,3 +1,4 @@
+[![C/C++ CI](https://github.com/Dlinuigh/lionql/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/Dlinuigh/lionql/actions/workflows/c-cpp.yml)
 # LionQL
 
 ## 数据库的实现清单

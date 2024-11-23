@@ -13,8 +13,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: configure
-      run: apt-get install meson flex bison
+    - name: configure environment
+      run: sudo apt-get install -y meson flex bison
     - name: make
       run: make
     - name: clean

@@ -5,5 +5,7 @@
       "binaryPath": "/home/lion/Documents/lionql/sql",
       "binaryArgs": []
     }
-  ]
+  ],
+  "C_Cpp.default.compileCommands": "/home/lion/Documents/lionql/_build/compile_commands.json",
+  "C_Cpp.default.configurationProvider": "mesonbuild.mesonbuild"
 }

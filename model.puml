@@ -1,0 +1,12 @@
+@startuml
+class Storage{
+}
+class Database{
+}
+class Table{
+}
+class Space{
+}
+class Page{
+}
+@enduml

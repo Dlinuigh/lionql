@@ -578,7 +578,7 @@ argument:
 argument_type:
   IN | OUT | INOUT ;
 type:
-  INT | TINYINT | SMALLINT |
+  INT | TINYINT | SMALLINT | BIGINT |
   DECIMAL_TYPE INTEGER COMMA INTEGER RPAREN {
     char* ptr = malloc(sizeof(char)*512);
     sprintf(ptr, "DECIMAL(%s, %s)", $2, $4);

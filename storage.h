@@ -1,5 +1,4 @@
-#ifndef STORAGE_H
-#define STORAGE_H
+#pragma once
 #include <algorithm>
 #include <bitset>
 #include <cstdint>
@@ -49,6 +48,21 @@ struct DatabaseHeader {
   std::vector<int> tables{};
 };
 #pragma pack(pop)
+// 添加一个log类用来调试，并且记录操作到文件。
+class LionLog{
+public:
+  LiongLog(){}
+  static void Info(std::string message, std::string func){
+    std::cout << func << std::endl;
+    std::cout << __func__ << message << std::endl;
+  }
+  static void Debug(std::string message, std::string func){
+    std::cout << func << std::endl;
+    std::cout << __func__ << message << std::endl;
+  }
+private:
+
+};
 /*
   为什么需要Page类，便于修改数据和写入数据，用于建立page缓冲区和查找表。
   当页面的数据完成写入后，也就是dirty时上一层需要定期检查并写入。
@@ -333,6 +347,7 @@ public:
   void
   insertData(const char *table_name,
              std::initializer_list<std::vector<std::string>> &&data) const {
+    
     db.at(cur_db)->insertData(table_name, std::move(data));
   }
 
